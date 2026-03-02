@@ -56,7 +56,7 @@ INSERT INTO Version_Reportaje (id_version, id_reportaje, fecha_cambio, hora_camb
 INSERT INTO Version_Reportaje (id_version, id_reportaje, fecha_cambio, hora_cambio, subtitulo_guardado, cuerpo_guardado) VALUES (3, 3, '2026-04-15', '20:30:00', 'Cronica primera parte', 'Primer tiempo aburrido en el estadio...');
 INSERT INTO Version_Reportaje (id_version, id_reportaje, fecha_cambio, hora_cambio, subtitulo_guardado, cuerpo_guardado) VALUES (4, 4, '2026-08-01', '19:00:00', 'Datos iniciales', 'Primeros recuentos de visitantes de la FIDMA...');
 
-INSERT INTO Ofrecimiento (id_evento, id_empresa, estado, tiene_acceso) VALUES (1, 1, 'ACEPTADO', true);
+INSERT INTO Ofrecimiento (id_evento, id_empresa, estado, tiene_acceso) VALUES (1, 1, 'ACEPTADO', false);
 INSERT INTO Ofrecimiento (id_evento, id_empresa, estado, tiene_acceso) VALUES (1, 2, 'PENDIENTE', false);
 INSERT INTO Ofrecimiento (id_evento, id_empresa, estado, tiene_acceso) VALUES (2, 3, 'RECHAZADO', false);
 INSERT INTO Ofrecimiento (id_evento, id_empresa, estado, tiene_acceso) VALUES (4, 4, 'ACEPTADO', true);

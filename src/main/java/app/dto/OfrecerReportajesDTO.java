@@ -9,11 +9,16 @@ public class OfrecerReportajesDTO {
     // Atributos de las Empresas
     private int id_empresa;
     private String nombre_empresa;
+    private String email; // Nuevo: Para notificaciones HU #33531
+    
+    // Atributos del Ofrecimiento
+    private String estado; // Nuevo: PENDIENTE, ACEPTADO, RECHAZADO
+    private int tiene_acceso; // Nuevo: 0 o 1 (SQLite)
 
-    // Constructor vacío (obligatorio para que la base de datos lo rellene solo)
+    // Constructor vacío obligatorio
     public OfrecerReportajesDTO() {}
 
-    // Getters y Setters (Eclipse los usa para pintar las tablas)
+    // Getters y Setters
     public int getId_evento() { return id_evento; }
     public void setId_evento(int id_evento) { this.id_evento = id_evento; }
 
@@ -29,9 +34,22 @@ public class OfrecerReportajesDTO {
     public String getNombre_empresa() { return nombre_empresa; }
     public void setNombre_empresa(String nombre_empresa) { this.nombre_empresa = nombre_empresa; }
 
-    // Este método es útil para mostrar el nombre en el JList de la derecha
+    // Nuevos métodos para la HU #33531
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+
+    public String getEstado() { return estado; }
+    public void setEstado(String estado) { this.estado = estado; }
+
+    public int getTiene_acceso() { return tiene_acceso; }
+    public void setTiene_acceso(int tiene_acceso) { this.tiene_acceso = tiene_acceso; }
+
     @Override
     public String toString() {
+        // En la lista de ofertas en curso, mostramos nombre y estado entre paréntesis
+        if (estado != null) {
+            return nombre_empresa + " (" + estado.substring(0,1) + ")";
+        }
         return nombre_empresa;
     }
 }
