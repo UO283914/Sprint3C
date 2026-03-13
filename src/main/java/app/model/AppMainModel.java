@@ -16,7 +16,9 @@ public class AppMainModel {
 
     // Obtiene todos los nombres de los reporteros mapeados al DTO
     public List<AppMainDTO> getListaReporteros() {
-        String sql = "SELECT nombre FROM Reportero ORDER BY nombre";
+        String sql = "SELECT nombre FROM Reportero "
+                + "WHERE tipo_reportero IS NULL OR UPPER(tipo_reportero)='BASE' "
+                + "ORDER BY nombre";
         return db.executeQueryPojo(AppMainDTO.class, sql);
     }
 
