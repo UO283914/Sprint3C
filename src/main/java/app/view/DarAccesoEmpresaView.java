@@ -10,17 +10,19 @@ import javax.swing.JLabel;
 import javax.swing.JTable;
 import javax.swing.JButton;
 import java.awt.Font;
+import javax.swing.JComboBox;
 
 public class DarAccesoEmpresaView extends JFrame {
 
 	private static final long serialVersionUID = 1L;
 	private JPanel contentPane;
 	private JTable tabEventos;
-	private JTable tabEmpresasDisponibles;
-	private JTable tabEmpresasSeleccionadas;
+	private JTable tabEmpresas;
 	private JButton btnDarAcceso;
+	private JButton btnQuitarAcceso;
 	private JButton btnCancelar;
 	private JButton btnAceptar;
+	private JComboBox<String> cbFiltroAcceso;
 
 	// El JLabel arriba para poder cambiarlo desde el Controlador
 	private JLabel lblNombreAgencia;
@@ -39,17 +41,15 @@ public class DarAccesoEmpresaView extends JFrame {
 	}
 
 	public DarAccesoEmpresaView() {
-		// DISPOSE_ON_CLOSE para no cerrar toda la app al cerrar esta ventana
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-		setBounds(100, 100, 950, 600);
+		setBounds(100, 100, 1120, 640);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
 		contentPane.setLayout(null);
 
-		// --- COLUMNA 1: EVENTOS CON REPORTAJE ---
 		JScrollPane scrollPane = new JScrollPane();
-		scrollPane.setBounds(10, 89, 380, 257);
+		scrollPane.setBounds(10, 89, 500, 380);
 		contentPane.add(scrollPane);
 
 		tabEventos = new JTable();
@@ -62,57 +62,57 @@ public class DarAccesoEmpresaView extends JFrame {
 
 		JLabel lblTituloEventos = new JLabel("Eventos con Reportaje entregado");
 		lblTituloEventos.setFont(new Font("Tahoma", Font.PLAIN, 16));
-		lblTituloEventos.setBounds(10, 64, 250, 14);
+		lblTituloEventos.setBounds(10, 64, 320, 14);
 		contentPane.add(lblTituloEventos);
 
-		// --- COLUMNA 2: EMPRESAS SIN ACCESO ---
-		JLabel lblTituloEmpresas = new JLabel("Empresas sin acceso");
+		JLabel lblFiltro = new JLabel("Filtro de acceso:");
+		lblFiltro.setFont(new Font("Tahoma", Font.PLAIN, 14));
+		lblFiltro.setBounds(540, 64, 140, 14);
+		contentPane.add(lblFiltro);
+
+		cbFiltroAcceso = new JComboBox<>(new String[] {
+				"Empresas sin acceso concedido",
+				"Empresas con acceso concedido"
+		});
+		cbFiltroAcceso.setBounds(680, 60, 250, 25);
+		contentPane.add(cbFiltroAcceso);
+
+		JLabel lblTituloEmpresas = new JLabel("Empresas");
 		lblTituloEmpresas.setFont(new Font("Tahoma", Font.PLAIN, 16));
-		lblTituloEmpresas.setBounds(410, 64, 208, 14);
+		lblTituloEmpresas.setBounds(540, 96, 208, 14);
 		contentPane.add(lblTituloEmpresas);
 
 		JScrollPane scrollPane_1 = new JScrollPane();
-		scrollPane_1.setBounds(410, 89, 244, 257);
+		scrollPane_1.setBounds(540, 121, 554, 348);
 		contentPane.add(scrollPane_1);
 
-		tabEmpresasDisponibles = new JTable();
-		scrollPane_1.setViewportView(tabEmpresasDisponibles);
+		tabEmpresas = new JTable();
+		scrollPane_1.setViewportView(tabEmpresas);
 
-		// --- BOTÓN CENTRAL ---
-		btnDarAcceso = new JButton("Dar Acceso ->");
-		btnDarAcceso.setBounds(410, 357, 244, 23);
+		btnDarAcceso = new JButton("Dar Acceso");
+		btnDarAcceso.setBounds(540, 480, 180, 30);
 		contentPane.add(btnDarAcceso);
 
-		// --- COLUMNA 3: EMPRESAS SELECCIONADAS ---
-		JLabel lblTituloSeleccionadas = new JLabel("Empresas seleccionadas");
-		lblTituloSeleccionadas.setFont(new Font("Tahoma", Font.PLAIN, 16));
-		lblTituloSeleccionadas.setBounds(670, 64, 242, 14);
-		contentPane.add(lblTituloSeleccionadas);
+		btnQuitarAcceso = new JButton("Quitar Acceso");
+		btnQuitarAcceso.setBounds(730, 480, 180, 30);
+		contentPane.add(btnQuitarAcceso);
 
-		JScrollPane scrollPane_2 = new JScrollPane();
-		scrollPane_2.setBounds(670, 89, 238, 257);
-		contentPane.add(scrollPane_2);
-
-		tabEmpresasSeleccionadas = new JTable();
-		scrollPane_2.setViewportView(tabEmpresasSeleccionadas);
-
-		// --- BOTONES INFERIORES ---
 		btnCancelar = new JButton("Cancelar");
-		btnCancelar.setBounds(797, 527, 111, 23);
+		btnCancelar.setBounds(983, 567, 111, 23);
 		contentPane.add(btnCancelar);
 
 		btnAceptar = new JButton("Aceptar");
-		btnAceptar.setBounds(670, 527, 117, 23);
+		btnAceptar.setBounds(856, 567, 117, 23);
 		contentPane.add(btnAceptar);
 	}
 
-	// GETTERS para el controlador
 	public JTable getTabEventos() { return tabEventos; }
-	public JTable getTabEmpresasDisponibles() { return tabEmpresasDisponibles; }
-	public JTable getTabEmpresasSeleccionadas() { return tabEmpresasSeleccionadas; }
+	public JTable getTabEmpresas() { return tabEmpresas; }
 	public JButton getBtnDarAcceso() { return btnDarAcceso; }
+	public JButton getBtnQuitarAcceso() { return btnQuitarAcceso; }
 	public JButton getBtnCancelar() { return btnCancelar; }
 	public JButton getBtnAceptar() { return btnAceptar; }
+	public JComboBox<String> getCbFiltroAcceso() { return cbFiltroAcceso; }
 	public JFrame getFrame() { return this; }
 	public JLabel getLblTituloAgencia() { return this.lblNombreAgencia; }
 }

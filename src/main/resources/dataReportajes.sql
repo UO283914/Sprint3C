@@ -113,6 +113,8 @@ INSERT INTO Ofrecimiento (id_evento, id_empresa, estado, tiene_acceso) VALUES (2
 INSERT INTO Ofrecimiento (id_evento, id_empresa, estado, tiene_acceso) VALUES (21, 4, 'ACEPTADO', false);
 INSERT INTO Ofrecimiento (id_evento, id_empresa, estado, tiene_acceso) VALUES (21, 5, 'ACEPTADO', false);
 
+-- ===== EJEMPLOS DE LAS NUEVAS TABLAS/CAMPOS =====
+
 -- Temáticas nuevas
 INSERT INTO Tematica (id_tematica, nombre) VALUES (1, 'Politica');
 INSERT INTO Tematica (id_tematica, nombre) VALUES (2, 'Economia');
@@ -176,3 +178,52 @@ VALUES (3, 4, 5, 'IMAGEN', '/media/reportaje4/fidma-publico.jpg', 'DEFINITIVO');
 UPDATE Ofrecimiento SET descargado = true WHERE id_evento = 1 AND id_empresa = 1;
 UPDATE Ofrecimiento SET descargado = true WHERE id_evento = 4 AND id_empresa = 4;
 UPDATE Ofrecimiento SET descargado = false WHERE id_evento = 20 AND id_empresa = 2;
+
+-- ===== AJUSTE HU: cobertura completa de temáticas =====
+-- Nuevas temáticas para enriquecer clasificación
+INSERT INTO Tematica (id_tematica, nombre) VALUES (6, 'Salud');
+INSERT INTO Tematica (id_tematica, nombre) VALUES (7, 'Sociedad');
+INSERT INTO Tematica (id_tematica, nombre) VALUES (8, 'Educacion');
+INSERT INTO Tematica (id_tematica, nombre) VALUES (9, 'Infraestructuras');
+INSERT INTO Tematica (id_tematica, nombre) VALUES (10, 'Medioambiente');
+
+-- Todos los eventos tienen al menos una temática (y varios con múltiples)
+INSERT INTO Evento_Tematica (id_evento, id_tematica) VALUES (3, 6);
+INSERT INTO Evento_Tematica (id_evento, id_tematica) VALUES (3, 7);
+INSERT INTO Evento_Tematica (id_evento, id_tematica) VALUES (6, 2);
+INSERT INTO Evento_Tematica (id_evento, id_tematica) VALUES (6, 7);
+INSERT INTO Evento_Tematica (id_evento, id_tematica) VALUES (7, 4);
+INSERT INTO Evento_Tematica (id_evento, id_tematica) VALUES (7, 7);
+INSERT INTO Evento_Tematica (id_evento, id_tematica) VALUES (8, 2);
+INSERT INTO Evento_Tematica (id_evento, id_tematica) VALUES (8, 7);
+INSERT INTO Evento_Tematica (id_evento, id_tematica) VALUES (9, 1);
+INSERT INTO Evento_Tematica (id_evento, id_tematica) VALUES (10, 8);
+INSERT INTO Evento_Tematica (id_evento, id_tematica) VALUES (12, 5);
+INSERT INTO Evento_Tematica (id_evento, id_tematica) VALUES (12, 4);
+INSERT INTO Evento_Tematica (id_evento, id_tematica) VALUES (21, 9);
+INSERT INTO Evento_Tematica (id_evento, id_tematica) VALUES (97, 1);
+INSERT INTO Evento_Tematica (id_evento, id_tematica) VALUES (98, 7);
+INSERT INTO Evento_Tematica (id_evento, id_tematica) VALUES (99, 5);
+INSERT INTO Evento_Tematica (id_evento, id_tematica) VALUES (100, 1);
+INSERT INTO Evento_Tematica (id_evento, id_tematica) VALUES (101, 2);
+INSERT INTO Evento_Tematica (id_evento, id_tematica) VALUES (101, 1);
+INSERT INTO Evento_Tematica (id_evento, id_tematica) VALUES (102, 4);
+INSERT INTO Evento_Tematica (id_evento, id_tematica) VALUES (103, 1);
+INSERT INTO Evento_Tematica (id_evento, id_tematica) VALUES (104, 4);
+INSERT INTO Evento_Tematica (id_evento, id_tematica) VALUES (105, 5);
+INSERT INTO Evento_Tematica (id_evento, id_tematica) VALUES (105, 2);
+
+-- Todos los reporteros tienen al menos una temática (y varios con múltiples)
+INSERT INTO Reportero_Tematica (id_reportero, id_tematica) VALUES (1, 2);
+INSERT INTO Reportero_Tematica (id_reportero, id_tematica) VALUES (2, 1);
+INSERT INTO Reportero_Tematica (id_reportero, id_tematica) VALUES (3, 10);
+INSERT INTO Reportero_Tematica (id_reportero, id_tematica) VALUES (4, 7);
+INSERT INTO Reportero_Tematica (id_reportero, id_tematica) VALUES (5, 5);
+INSERT INTO Reportero_Tematica (id_reportero, id_tematica) VALUES (6, 7);
+INSERT INTO Reportero_Tematica (id_reportero, id_tematica) VALUES (7, 3);
+INSERT INTO Reportero_Tematica (id_reportero, id_tematica) VALUES (8, 4);
+INSERT INTO Reportero_Tematica (id_reportero, id_tematica) VALUES (9, 1);
+INSERT INTO Reportero_Tematica (id_reportero, id_tematica) VALUES (10, 1);
+INSERT INTO Reportero_Tematica (id_reportero, id_tematica) VALUES (11, 5);
+INSERT INTO Reportero_Tematica (id_reportero, id_tematica) VALUES (12, 4);
+

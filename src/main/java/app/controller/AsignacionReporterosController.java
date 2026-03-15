@@ -27,12 +27,12 @@ public class AsignacionReporterosController {
         this.reporterosAsignadosVisualmente = new ArrayList<>();
         this.reporterosDisponiblesVisualmente = new ArrayList<>();
         this.initView();
-       // this.initController();
     }
 
     public void initController() {
-        // Escuchador para cambiar de filtro en el ComboBox
         view.getCbFiltroEventos().addActionListener(e -> SwingUtil.exceptionWrapper(() -> cargarEventosPorFiltro()));
+        view.getCbFiltroTematicaReporteros().addActionListener(
+                e -> SwingUtil.exceptionWrapper(() -> cargarDetallesEvento()));
 
         view.getTabEventos().addMouseListener(new MouseAdapter() {
             @Override
@@ -49,7 +49,7 @@ public class AsignacionReporterosController {
 
     public void initView() {
         view.getLblTituloAgencia().setText("Agencia de Prensa: " + nombreAgencia);
-        cargarEventosPorFiltro(); // Carga la tabla por primera vez basada en el combobox
+        cargarEventosPorFiltro();
         view.getFrame().setVisible(true);
     }
 
@@ -63,7 +63,8 @@ public class AsignacionReporterosController {
             eventos = model.getEventosConAsignacion(nombreAgencia);
         }
 
-        TableModel tmodel = SwingUtil.getTableModelFromPojos(eventos, new String[]{"idEvento", "descripcion", "fecha"});
+        TableModel tmodel = SwingUtil.getTableModelFromPojos(eventos,
+                new String[] { "idEvento", "descripcion", "fecha", "tematicas" });
         view.getTabEventos().setModel(tmodel);
         SwingUtil.autoAdjustColumns(view.getTabEventos());
 
@@ -75,7 +76,6 @@ public class AsignacionReporterosController {
         view.getTabEventos().setAutoResizeMode(javax.swing.JTable.AUTO_RESIZE_ALL_COLUMNS);
         view.getTabEventos().setRowHeight(25);
 
-        // Limpiamos las tablas de la derecha para evitar fallos visuales
         reporterosDisponiblesVisualmente.clear();
         reporterosAsignadosVisualmente.clear();
         actualizarTablaDisponiblesVisualmente();
@@ -87,9 +87,10 @@ public class AsignacionReporterosController {
         if (filaSeleccionada >= 0) {
             Integer idEvento = (Integer) view.getTabEventos().getValueAt(filaSeleccionada, 0);
             String fecha = (String) view.getTabEventos().getValueAt(filaSeleccionada, 2);
+            boolean soloEspecializados = view.getCbFiltroTematicaReporteros().getSelectedIndex() == 1;
 
-            // Cargamos de la BD los disponibles y los que ya estaban asignados
-            reporterosDisponiblesVisualmente = model.getReporterosDisponibles(fecha, nombreAgencia);
+            reporterosDisponiblesVisualmente = model.getReporterosDisponibles(fecha, nombreAgencia, idEvento,
+                    soloEspecializados);
             reporterosAsignadosVisualmente = model.getReporterosAsignados(idEvento);
 
             actualizarTablaDisponiblesVisualmente();
@@ -102,7 +103,8 @@ public class AsignacionReporterosController {
         int[] filasReporteros = view.getTabDisponibles().getSelectedRows();
 
         if (filaEvento == -1 || filasReporteros.length == 0) {
-            SwingUtil.showMessage("Debes seleccionar un evento y al menos un reportero disponible.", "Aviso", javax.swing.JOptionPane.WARNING_MESSAGE);
+            SwingUtil.showMessage("Debes seleccionar un evento y al menos un reportero disponible.", "Aviso",
+                    javax.swing.JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -115,13 +117,13 @@ public class AsignacionReporterosController {
         actualizarTablaAsignadosVisualmente();
     }
 
-    // Movimiento inverso (Eliminar)
     private void moverReporteroADisponibles() {
         int filaEvento = view.getTabEventos().getSelectedRow();
         int[] filasReporteros = view.getTabAsignados().getSelectedRows();
 
         if (filaEvento == -1 || filasReporteros.length == 0) {
-            SwingUtil.showMessage("Debes seleccionar un evento y al menos un reportero asignado para eliminar.", "Aviso", javax.swing.JOptionPane.WARNING_MESSAGE);
+            SwingUtil.showMessage("Debes seleccionar un evento y al menos un reportero asignado para eliminar.", "Aviso",
+                    javax.swing.JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -137,14 +139,12 @@ public class AsignacionReporterosController {
     private void confirmarAsignacion() {
         int filaEvento = view.getTabEventos().getSelectedRow();
 
-        if (filaEvento >= 0) { // Quitamos el !isEmpty() para permitir guardar vacíos
+        if (filaEvento >= 0) {
             Integer idEvento = (Integer) view.getTabEventos().getValueAt(filaEvento, 0);
 
-            // 1. LIMPIEZA TOTAL: Borramos de la BD todas las asignaciones de este evento
             model.eliminarAsignacionesPorEvento(idEvento);
 
-            // 2. INSERCIÓN NUEVA: Guardamos lo que haya quedado en la tabla derecha
-            for (app.dto.ReporteroDisplayDTO rep : reporterosAsignadosVisualmente) {
+            for (ReporteroDisplayDTO rep : reporterosAsignadosVisualmente) {
                 model.guardarAsignacion(idEvento, rep.getIdReportero());
             }
 
@@ -156,7 +156,8 @@ public class AsignacionReporterosController {
     }
 
     private void actualizarTablaAsignadosVisualmente() {
-        TableModel tmodel = SwingUtil.getTableModelFromPojos(reporterosAsignadosVisualmente, new String[]{"idReportero", "nombre"});
+        TableModel tmodel = SwingUtil.getTableModelFromPojos(reporterosAsignadosVisualmente,
+                new String[] { "idReportero", "nombre", "tematicas" });
         view.getTabAsignados().setModel(tmodel);
         view.getTabAsignados().getColumnModel().getColumn(0).setMinWidth(0);
         view.getTabAsignados().getColumnModel().getColumn(0).setMaxWidth(0);
@@ -164,7 +165,8 @@ public class AsignacionReporterosController {
     }
 
     private void actualizarTablaDisponiblesVisualmente() {
-        TableModel tmodel = SwingUtil.getTableModelFromPojos(reporterosDisponiblesVisualmente, new String[]{"idReportero", "nombre"});
+        TableModel tmodel = SwingUtil.getTableModelFromPojos(reporterosDisponiblesVisualmente,
+                new String[] { "idReportero", "nombre", "tematicas" });
         view.getTabDisponibles().setModel(tmodel);
         view.getTabDisponibles().getColumnModel().getColumn(0).setMinWidth(0);
         view.getTabDisponibles().getColumnModel().getColumn(0).setMaxWidth(0);

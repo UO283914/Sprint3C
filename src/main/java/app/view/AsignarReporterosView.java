@@ -20,11 +20,12 @@ public class AsignarReporterosView extends JFrame {
 	private JTable tabDisponibles;
 	private JTable tabAsignados;
 	private JButton btnAsignar;
-	private JButton btnEliminar; // NUEVO BOTÓN
+	private JButton btnEliminar;
 	private JButton btnCancelar;
 	private JButton btnAceptar;
 	private JLabel lblNombreAgencia;
-	private JComboBox<String> cbFiltroEventos; // NUEVO FILTRO
+	private JComboBox<String> cbFiltroEventos;
+	private JComboBox<String> cbFiltroTematicaReporteros;
 
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
@@ -40,7 +41,7 @@ public class AsignarReporterosView extends JFrame {
 	}
 
 	public AsignarReporterosView() {
-		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE); // Mejor DISPOSE para no cerrar toda la app
+		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		setBounds(100, 100, 960, 600);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
@@ -52,18 +53,28 @@ public class AsignarReporterosView extends JFrame {
 		lblNombreAgencia.setBounds(10, 9, 450, 22);
 		contentPane.add(lblNombreAgencia);
 
-		// --- NUEVO: FILTRO DE EVENTOS ---
-		JLabel lblFiltro = new JLabel("Filtro de visualización:");
+		JLabel lblFiltro = new JLabel("Filtro de eventos:");
 		lblFiltro.setFont(new Font("Tahoma", Font.PLAIN, 14));
 		lblFiltro.setBounds(10, 45, 140, 20);
 		contentPane.add(lblFiltro);
 
 		cbFiltroEventos = new JComboBox<String>();
-		cbFiltroEventos.setModel(new DefaultComboBoxModel(new String[] {"Eventos sin reporteros asignados", "Eventos con reporteros asignados"}));
-		cbFiltroEventos.setBounds(160, 45, 230, 22);
+		cbFiltroEventos.setModel(new DefaultComboBoxModel(
+				new String[] { "Eventos sin reporteros asignados", "Eventos con reporteros asignados" }));
+		cbFiltroEventos.setBounds(130, 45, 260, 22);
 		contentPane.add(cbFiltroEventos);
 
-		// --- TABLA EVENTOS ---
+		JLabel lblFiltroTematica = new JLabel("Filtro reporteros:");
+		lblFiltroTematica.setFont(new Font("Tahoma", Font.PLAIN, 14));
+		lblFiltroTematica.setBounds(410, 45, 130, 20);
+		contentPane.add(lblFiltroTematica);
+
+		cbFiltroTematicaReporteros = new JComboBox<String>();
+		cbFiltroTematicaReporteros.setModel(new DefaultComboBoxModel(
+				new String[] { "Todos los disponibles", "Solo especializados en temática del evento" }));
+		cbFiltroTematicaReporteros.setBounds(545, 45, 363, 22);
+		contentPane.add(cbFiltroTematicaReporteros);
+
 		JLabel lblNewLabel_1 = new JLabel("Eventos");
 		lblNewLabel_1.setFont(new Font("Tahoma", Font.PLAIN, 16));
 		lblNewLabel_1.setBounds(10, 80, 81, 14);
@@ -75,7 +86,6 @@ public class AsignarReporterosView extends JFrame {
 		tabEventos = new JTable();
 		scrollPane.setViewportView(tabEventos);
 
-		// --- TABLA DISPONIBLES ---
 		JLabel lblNewLabel_2 = new JLabel("Reporteros Disponibles");
 		lblNewLabel_2.setFont(new Font("Tahoma", Font.PLAIN, 16));
 		lblNewLabel_2.setBounds(410, 80, 208, 14);
@@ -91,7 +101,6 @@ public class AsignarReporterosView extends JFrame {
 		btnAsignar.setBounds(410, 365, 244, 23);
 		contentPane.add(btnAsignar);
 
-		// --- TABLA ASIGNADOS ---
 		JLabel lblNewLabel_3 = new JLabel("Reporteros Asignados");
 		lblNewLabel_3.setFont(new Font("Tahoma", Font.PLAIN, 16));
 		lblNewLabel_3.setBounds(670, 80, 242, 14);
@@ -103,12 +112,10 @@ public class AsignarReporterosView extends JFrame {
 		tabAsignados = new JTable();
 		scrollPane_2.setViewportView(tabAsignados);
 
-		// --- NUEVO: BOTÓN ELIMINAR ---
 		btnEliminar = new JButton("Eliminar Asignación");
 		btnEliminar.setBounds(670, 365, 238, 23);
 		contentPane.add(btnEliminar);
 
-		// --- BOTONES INFERIORES ---
 		btnCancelar = new JButton("Cancelar");
 		btnCancelar.setBounds(797, 527, 111, 23);
 		contentPane.add(btnCancelar);
@@ -126,6 +133,7 @@ public class AsignarReporterosView extends JFrame {
 	public JButton getBtnCancelar() { return btnCancelar; }
 	public JButton getBtnAceptar() { return btnAceptar; }
 	public JComboBox<String> getCbFiltroEventos() { return cbFiltroEventos; }
+	public JComboBox<String> getCbFiltroTematicaReporteros() { return cbFiltroTematicaReporteros; }
 	public JFrame getFrame() { return this; }
 	public JLabel getLblTituloAgencia() { return this.lblNombreAgencia; }
 }
