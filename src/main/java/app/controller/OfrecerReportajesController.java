@@ -1,10 +1,12 @@
 package app.controller;
 
 import java.util.List;
+
 import javax.swing.table.DefaultTableModel;
+
+import app.dto.OfrecerReportajesDTO;
 import app.model.OfrecerReportajesModel;
 import app.view.OfrecerReportajesView;
-import app.dto.OfrecerReportajesDTO;
 import giis.demo.util.SwingUtil;
 
 public class OfrecerReportajesController {
@@ -12,9 +14,8 @@ public class OfrecerReportajesController {
 	private OfrecerReportajesModel model;
 	private OfrecerReportajesView view;
 	private String agenciaActual;
-	
-	// Contador de cambios realizados en la sesión actual
 	private int operacionesRealizadas = 0;
+	private List<OfrecerReportajesDTO> eventosCargados;
 
 	public OfrecerReportajesController(OfrecerReportajesModel m, OfrecerReportajesView v, String agencia) {
 		this.model = m;
@@ -24,45 +25,50 @@ public class OfrecerReportajesController {
 	}
 
 	public void initView() {
-		this.view.lblAgenciaSeleccionada.setText("Agencia: " + agenciaActual);
+		view.lblAgenciaSeleccionada.setText("Agencia: " + agenciaActual);
 		cargarEventos();
+		configurarEstadoFiltroEspecializacion(false);
 
-		// Actualizar tablas al seleccionar un evento
 		view.tableEventos.getSelectionModel().addListSelectionListener(e -> {
 			if (!e.getValueIsAdjusting()) {
 				actualizarTablasDependientes();
 			}
 		});
 
-		// Filtro de empresas (Sin oferta / Ya ofertadas)
 		view.comboFiltroEmpresas.addActionListener(e -> {
 			int fila = view.tableEventos.getSelectedRow();
 			if (fila != -1) {
-				cargarEmpresasSegunFiltro((int) view.tableEventos.getValueAt(fila, 0));
+				actualizarTablasDependientes();
 			}
 		});
 
-		// --- ACCIONES DE BOTONES ---
-		
+		view.chkCoincidenciaTematicas.addActionListener(e -> {
+			int fila = view.tableEventos.getSelectedRow();
+			if (fila != -1) {
+				actualizarTablasDependientes();
+			}
+		});
+
 		view.btnOfertar.addActionListener(e -> ejecutarOferta());
-		
 		view.btnQuitarOfrecimiento.addActionListener(e -> ejecutarQuitarOfrecimiento());
 
-		// Botón ACEPTAR TODO: Muestra el resumen de cambios de la sesión
 		view.btnAceptarTodo.addActionListener(e -> {
 			if (operacionesRealizadas == 0) {
-				SwingUtil.showMessage("No se han realizado cambios en esta sesión.", "Aviso", 1);
+				SwingUtil.showMessage("No se han realizado cambios en esta sesion.", "Aviso", 1);
 			} else {
-				String mensaje = "Sesión finalizada con éxito.\nSe han registrado " + operacionesRealizadas + " cambios en la base de datos.";
-				SwingUtil.showMessage(mensaje, "Éxito", 1);
-				operacionesRealizadas = 0; 
+				String mensaje = "Sesion finalizada con exito.\nSe han registrado "
+						+ operacionesRealizadas + " cambios en la base de datos.";
+				SwingUtil.showMessage(mensaje, "Exito", 1);
+				operacionesRealizadas = 0;
 			}
 		});
 
 		view.btnCancelar.addActionListener(e -> view.dispose());
-		
+
 		view.btnLimpiarSeleccion.addActionListener(e -> {
 			view.tableEventos.clearSelection();
+			view.chkCoincidenciaTematicas.setSelected(false);
+			configurarEstadoFiltroEspecializacion(false);
 			limpiarTablas();
 			operacionesRealizadas = 0;
 		});
@@ -72,19 +78,33 @@ public class OfrecerReportajesController {
 
 	private void actualizarTablasDependientes() {
 		int fila = view.tableEventos.getSelectedRow();
-		if (fila != -1) {
-			int idEvento = (int) view.tableEventos.getValueAt(fila, 0);
-			cargarEmpresasSegunFiltro(idEvento);
-			cargarOfertasEnCurso(idEvento);
-		} else {
+		if (fila == -1) {
 			limpiarTablas();
+			return;
+		}
+
+		int idEvento = (int) view.tableEventos.getValueAt(fila, 0);
+		OfrecerReportajesDTO eventoSeleccionado = eventosCargados.get(fila);
+		view.lblTematicasEvento.setText("Tematicas del evento: " + eventoSeleccionado.getTematicas_evento());
+
+		boolean mostrandoSinOferta = view.comboFiltroEmpresas.getSelectedIndex() == 0;
+		configurarEstadoFiltroEspecializacion(mostrandoSinOferta);
+
+		cargarEmpresasSegunFiltro(idEvento);
+		cargarOfertasEnCurso(idEvento);
+	}
+
+	private void configurarEstadoFiltroEspecializacion(boolean habilitado) {
+		view.chkCoincidenciaTematicas.setEnabled(habilitado);
+		if (!habilitado) {
+			view.chkCoincidenciaTematicas.setSelected(false);
 		}
 	}
 
 	private void ejecutarQuitarOfrecimiento() {
 		int filaEvento = view.tableEventos.getSelectedRow();
 		int filaOferta = view.tableOfertasEnCurso.getSelectedRow();
-		
+
 		if (filaOferta == -1) {
 			SwingUtil.showMessage("Seleccione una empresa de 'OFERTAS EN CURSO' para quitarla.", "Aviso", 1);
 			return;
@@ -94,27 +114,27 @@ public class OfrecerReportajesController {
 		int idEmpresa = (int) view.tableOfertasEnCurso.getValueAt(filaOferta, 0);
 
 		OfrecerReportajesDTO detalle = model.getDetalleOfrecimiento(idEvento, idEmpresa);
-
-		// Restricción: No se puede quitar si tiene acceso (1)
 		if (detalle.getTiene_acceso() == 1) {
 			SwingUtil.showMessage("No se puede quitar: Acceso ya concedido.", "Error", 0);
 			return;
 		}
 
-		// Notificación básica si estaba ACEPTADO
 		if ("ACEPTADO".equals(detalle.getEstado())) {
-			SwingUtil.showMessage("Se ha notificado por email a " + detalle.getEmail() + " la cancelación.", "Email enviado", 1);
+			SwingUtil.showMessage("Se ha notificado por email a " + detalle.getEmail() + " la cancelacion.",
+					"Email enviado", 1);
 		}
 
 		model.eliminarOfrecimiento(idEvento, idEmpresa);
-		operacionesRealizadas++; // Incrementamos contador
+		operacionesRealizadas++;
 		actualizarTablasDependientes();
 	}
 
 	private void ejecutarOferta() {
 		int filaEvento = view.tableEventos.getSelectedRow();
-		if (filaEvento == -1) return;
-		
+		if (filaEvento == -1) {
+			return;
+		}
+
 		int idEvento = (int) view.tableEventos.getValueAt(filaEvento, 0);
 		boolean cambios = false;
 
@@ -122,11 +142,11 @@ public class OfrecerReportajesController {
 			Boolean check = (Boolean) view.tableEmpresas.getValueAt(r, 2);
 			if (check != null && check) {
 				model.insertarOfrecimientos(idEvento, (int) view.tableEmpresas.getValueAt(r, 0));
-				operacionesRealizadas++; // Incrementamos contador
+				operacionesRealizadas++;
 				cambios = true;
 			}
 		}
-		
+
 		if (cambios) {
 			actualizarTablasDependientes();
 		} else {
@@ -136,11 +156,12 @@ public class OfrecerReportajesController {
 
 	private void cargarEmpresasSegunFiltro(int idEvento) {
 		int filtro = view.comboFiltroEmpresas.getSelectedIndex();
-		if (filtro == 0) { // Empresas sin oferta
-			configurarTablaConChecks(model.getEmpresasSinOferta(idEvento));
+		if (filtro == 0) {
+			boolean soloCoincidentes = view.chkCoincidenciaTematicas.isSelected();
+			configurarTablaConChecks(model.getEmpresasSinOferta(idEvento, soloCoincidentes));
 			view.btnOfertar.setEnabled(true);
-		} else { // Empresas ya ofertadas
-			String[] cols = {"id_empresa", "nombre_empresa", "estado"};
+		} else {
+			String[] cols = { "id_empresa", "nombre_empresa", "estado" };
 			view.tableEmpresas.setModel(SwingUtil.getTableModelFromPojos(model.getEmpresasConOferta(idEvento), cols));
 			view.btnOfertar.setEnabled(false);
 		}
@@ -149,20 +170,20 @@ public class OfrecerReportajesController {
 
 	private void cargarOfertasEnCurso(int idEvento) {
 		List<OfrecerReportajesDTO> ofertas = model.getEmpresasConOferta(idEvento);
-		String[] columnas = {"id_empresa", "nombre_empresa", "estado"};
+		String[] columnas = { "id_empresa", "nombre_empresa", "estado" };
 		view.tableOfertasEnCurso.setModel(SwingUtil.getTableModelFromPojos(ofertas, columnas));
 		SwingUtil.autoAdjustColumns(view.tableOfertasEnCurso);
 	}
 
 	private void cargarEventos() {
-		List<OfrecerReportajesDTO> eventos = model.getEventosConReportero(agenciaActual);
-		String[] columnas = {"id_evento", "nombre_evento", "reportero_asignado"};
-		view.tableEventos.setModel(SwingUtil.getTableModelFromPojos(eventos, columnas));
+		eventosCargados = model.getEventosConReportero(agenciaActual);
+		String[] columnas = { "id_evento", "nombre_evento", "reportero_asignado" };
+		view.tableEventos.setModel(SwingUtil.getTableModelFromPojos(eventosCargados, columnas));
 		SwingUtil.autoAdjustColumns(view.tableEventos);
 	}
 
 	private void configurarTablaConChecks(List<OfrecerReportajesDTO> empresas) {
-		String[] columnas = {"id_empresa", "nombre_empresa"};
+		String[] columnas = { "id_empresa", "nombre_empresa" };
 		DefaultTableModel tm = (DefaultTableModel) SwingUtil.getTableModelFromPojos(empresas, columnas);
 		tm.addColumn("Seleccionar");
 		view.tableEmpresas.setModel(new DefaultTableModel() {
@@ -180,5 +201,6 @@ public class OfrecerReportajesController {
 	private void limpiarTablas() {
 		view.tableEmpresas.setModel(new DefaultTableModel());
 		view.tableOfertasEnCurso.setModel(new DefaultTableModel());
+		view.lblTematicasEvento.setText("Tematicas del evento: -");
 	}
 }
