@@ -83,12 +83,25 @@ public class DarAccesoEmpresaController {
 		}
 
 		Integer idEvento = (Integer) view.getTabEventos().getValueAt(filaEvento, 0);
+		int concedidas = 0;
+		int rechazadas = 0;
 		for (int fila : filasSeleccionadas) {
 			app.dto.EmpresaDisplayDTO emp = empresasMemoria.get(fila);
-			model.concederAcceso(idEvento, emp.getIdEmpresa());
+			try {
+				model.concederAcceso(idEvento, emp.getIdEmpresa());
+				concedidas++;
+			} catch (giis.demo.util.ApplicationException ex) {
+				rechazadas++;
+			}
 		}
 
-		SwingUtil.showMessage("Accesos concedidos correctamente.", "Información", javax.swing.JOptionPane.INFORMATION_MESSAGE);
+		if (rechazadas > 0) {
+			SwingUtil.showMessage("Acceso concedido a " + concedidas + " empresa(s). "
+					+ rechazadas + " empresa(s) no cumplen requisitos de finalización/pago.",
+					"Aviso", javax.swing.JOptionPane.WARNING_MESSAGE);
+		} else {
+			SwingUtil.showMessage("Accesos concedidos correctamente.", "Información", javax.swing.JOptionPane.INFORMATION_MESSAGE);
+		}
 		cargarEmpresasPorFiltro();
 	}
 
