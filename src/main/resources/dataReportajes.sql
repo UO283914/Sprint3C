@@ -282,6 +282,12 @@ UPDATE Reportaje
 SET id_reportero_responsable = 7, estado_entrega = 'ABIERTA'
 WHERE id_reportaje = 3;
 UPDATE Reportaje
+SET id_reportero_responsable = 1, estado_entrega = 'FINALIZADA', fecha_fin_entrega = '2026-10-26 18:00:00'
+WHERE id_reportaje = 20;
+UPDATE Reportaje
+SET id_reportero_responsable = 7, estado_entrega = 'FINALIZADA', fecha_fin_entrega = '2026-11-29 20:00:00'
+WHERE id_reportaje = 21;
+UPDATE Reportaje
 SET fecha_fin_embargo = '2026-12-01 00:00:00'
 WHERE id_reportaje IN (20, 21);
 
