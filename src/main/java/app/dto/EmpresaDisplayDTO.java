@@ -8,8 +8,11 @@ public class EmpresaDisplayDTO {
 	private Integer tieneTarifa;
 	private Integer alCorrientePago;
 	private Integer reportajePagado;
+	private Integer elegiblePago;
 	private String acceso;
 	private String descarga;
+	private String tarifa;
+	private String pago;
 
 	public Integer getIdEmpresa() { return idEmpresa; }
 	public void setIdEmpresa(Integer idEmpresa) { this.idEmpresa = idEmpresa; }
@@ -36,11 +39,30 @@ public class EmpresaDisplayDTO {
 	public String getDescarga() { return descarga; }
 
 	public Integer getTieneTarifa() { return tieneTarifa; }
-	public void setTieneTarifa(Integer tieneTarifa) { this.tieneTarifa = tieneTarifa; }
+	public void setTieneTarifa(Integer tieneTarifa) {
+		this.tieneTarifa = tieneTarifa;
+		this.tarifa = (tieneTarifa != null && tieneTarifa == 1) ? "SÍ" : "NO";
+	}
 
 	public Integer getAlCorrientePago() { return alCorrientePago; }
 	public void setAlCorrientePago(Integer alCorrientePago) { this.alCorrientePago = alCorrientePago; }
 
 	public Integer getReportajePagado() { return reportajePagado; }
-	public void setReportajePagado(Integer reportajePagado) { this.reportajePagado = reportajePagado; }
+	public void setReportajePagado(Integer reportajePagado) {
+		this.reportajePagado = reportajePagado;
+		actualizarPago();
+	}
+
+	public Integer getElegiblePago() { return elegiblePago; }
+	public void setElegiblePago(Integer elegiblePago) {
+		this.elegiblePago = elegiblePago;
+		actualizarPago();
+	}
+
+	public String getTarifa() { return tarifa; }
+	public String getPago() { return pago; }
+
+	private void actualizarPago() {
+		this.pago = (elegiblePago != null && elegiblePago == 1) ? "SÍ" : "NO";
+	}
 }

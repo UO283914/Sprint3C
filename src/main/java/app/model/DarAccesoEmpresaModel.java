@@ -13,6 +13,7 @@ public class DarAccesoEmpresaModel {
 	// 1. Eventos de la agencia que SÍ tienen reportaje FINALIZADO por responsable
 	public List<EventoDisplayDTO> getEventosConReportaje(String nombreAgencia) {
 		String sql = "SELECT e.id_evento, e.descripcion, e.fecha, "
+				+ "'SÍ' AS finalizado, "
 				+ "COALESCE(GROUP_CONCAT(DISTINCT t.nombre), 'Sin temática') AS tematicas "
 				+ "FROM Evento e "
 				+ "JOIN Agencia a ON e.id_agencia = a.id_agencia "
@@ -30,7 +31,9 @@ public class DarAccesoEmpresaModel {
 		String sql = "SELECT emp.id_empresa, emp.nombre, o.tiene_acceso AS tieneAcceso, o.descargado, "
 				+ "CASE WHEN aet.id_empresa IS NULL THEN 0 ELSE 1 END AS tieneTarifa, "
 				+ "COALESCE(aet.al_corriente_pago, 0) AS alCorrientePago, "
-				+ "COALESCE(o.reportaje_pagado, 0) AS reportajePagado "
+				+ "COALESCE(o.reportaje_pagado, 0) AS reportajePagado, "
+				+ "CASE WHEN (aet.id_empresa IS NOT NULL AND aet.al_corriente_pago = 1) "
+				+ "OR (aet.id_empresa IS NULL AND o.reportaje_pagado = 1) THEN 1 ELSE 0 END AS elegiblePago "
 				+ "FROM Empresa_Comunicacion emp "
 				+ "JOIN Ofrecimiento o ON emp.id_empresa = o.id_empresa "
 				+ "JOIN Evento ev ON ev.id_evento = o.id_evento "
@@ -41,9 +44,7 @@ public class DarAccesoEmpresaModel {
 				+ "AND o.estado = 'ACEPTADO' "
 				+ "AND o.tiene_acceso = ? "
 				+ "AND r.estado_entrega = 'FINALIZADA' "
-				+ "AND r.id_reportero_responsable IS NOT NULL "
-				+ "AND ( (aet.id_empresa IS NOT NULL AND aet.al_corriente_pago = 1) "
-				+ "   OR (aet.id_empresa IS NULL AND o.reportaje_pagado = 1) )";
+				+ "AND r.id_reportero_responsable IS NOT NULL ";
 		return db.executeQueryPojo(EmpresaDisplayDTO.class, sql, idEvento, conAcceso ? 1 : 0);
 	}
 
