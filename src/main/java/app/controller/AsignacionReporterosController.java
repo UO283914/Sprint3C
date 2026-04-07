@@ -19,6 +19,10 @@ public class AsignacionReporterosController {
 
     private List<ReporteroDisplayDTO> reporterosAsignadosVisualmente;
     private List<ReporteroDisplayDTO> reporterosDisponiblesVisualmente;
+    private boolean eventoFinalizadoSeleccionado = false;
+    private Integer responsableSeleccionadoId = null;
+    private List<Integer> asignadosOriginales = new ArrayList<>();
+    private Integer responsableOriginalId = null;
 
     public AsignacionReporterosController(AsignacionReporterosModel m, AsignarReporterosView v, String nombreAgencia) {
         this.model = m;
@@ -45,7 +49,9 @@ public class AsignacionReporterosController {
 
         view.getBtnAsignar().addActionListener(e -> SwingUtil.exceptionWrapper(() -> moverReporteroAAsignados()));
         view.getBtnEliminar().addActionListener(e -> SwingUtil.exceptionWrapper(() -> moverReporteroADisponibles()));
-        view.getBtnAceptar().addActionListener(e -> SwingUtil.exceptionWrapper(() -> confirmarAsignacion()));
+        view.getBtnElegirResponsable().addActionListener(e -> SwingUtil.exceptionWrapper(() -> elegirResponsable()));
+        view.getBtnFinalizarAsignacion().addActionListener(e -> SwingUtil.exceptionWrapper(() -> confirmarAsignacion()));
+        view.getBtnAceptar().addActionListener(e -> view.getFrame().dispose());
         view.getBtnCancelar().addActionListener(e -> view.getFrame().dispose());
     }
 
@@ -80,8 +86,14 @@ public class AsignacionReporterosController {
 
         reporterosDisponiblesVisualmente.clear();
         reporterosAsignadosVisualmente.clear();
+        eventoFinalizadoSeleccionado = false;
+        responsableSeleccionadoId = null;
+        asignadosOriginales.clear();
+        responsableOriginalId = null;
+        view.getLblResponsable().setText("Reportero responsable: (sin seleccionar)");
         actualizarTablaDisponiblesVisualmente();
         actualizarTablaAsignadosVisualmente();
+        actualizarEstadoEdicion();
     }
 
     private void cargarDetallesEvento() {
@@ -95,13 +107,24 @@ public class AsignacionReporterosController {
             reporterosDisponiblesVisualmente = model.getReporterosDisponibles(fecha, nombreAgencia, idEvento,
                     soloEspecializados, tipoReportero);
             reporterosAsignadosVisualmente = model.getReporterosAsignados(idEvento);
+            eventoFinalizadoSeleccionado = model.isAsignacionFinalizada(idEvento);
+            responsableSeleccionadoId = obtenerResponsableDeAsignados(reporterosAsignadosVisualmente);
+            asignadosOriginales = obtenerIdsOrdenados(reporterosAsignadosVisualmente);
+            responsableOriginalId = responsableSeleccionadoId;
+            actualizarLabelResponsable();
 
             actualizarTablaDisponiblesVisualmente();
             actualizarTablaAsignadosVisualmente();
+            actualizarEstadoEdicion();
         }
     }
 
     private void moverReporteroAAsignados() {
+        if (eventoFinalizadoSeleccionado) {
+            SwingUtil.showMessage("La asignación está finalizada y no puede modificarse.", "Aviso",
+                    javax.swing.JOptionPane.WARNING_MESSAGE);
+            return;
+        }
         int filaEvento = view.getTabEventos().getSelectedRow();
         int[] filasReporteros = view.getTabDisponibles().getSelectedRows();
 
@@ -118,9 +141,18 @@ public class AsignacionReporterosController {
         }
         actualizarTablaDisponiblesVisualmente();
         actualizarTablaAsignadosVisualmente();
+        if (responsableSeleccionadoId != null && !contieneReporteroAsignado(responsableSeleccionadoId)) {
+            responsableSeleccionadoId = null;
+            actualizarLabelResponsable();
+        }
     }
 
     private void moverReporteroADisponibles() {
+        if (eventoFinalizadoSeleccionado) {
+            SwingUtil.showMessage("La asignación está finalizada y no puede modificarse.", "Aviso",
+                    javax.swing.JOptionPane.WARNING_MESSAGE);
+            return;
+        }
         int filaEvento = view.getTabEventos().getSelectedRow();
         int[] filasReporteros = view.getTabAsignados().getSelectedRows();
 
@@ -137,6 +169,10 @@ public class AsignacionReporterosController {
         }
         actualizarTablaDisponiblesVisualmente();
         actualizarTablaAsignadosVisualmente();
+        if (responsableSeleccionadoId != null && !contieneReporteroAsignado(responsableSeleccionadoId)) {
+            responsableSeleccionadoId = null;
+            actualizarLabelResponsable();
+        }
     }
 
     private void confirmarAsignacion() {
@@ -144,18 +180,127 @@ public class AsignacionReporterosController {
 
         if (filaEvento >= 0) {
             Integer idEvento = (Integer) view.getTabEventos().getValueAt(filaEvento, 0);
+            if (model.isAsignacionFinalizada(idEvento)) {
+                SwingUtil.showMessage("La asignación ya está finalizada. No se puede modificar.", "Aviso",
+                        javax.swing.JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            if (reporterosAsignadosVisualmente.isEmpty()) {
+                SwingUtil.showMessage("Debe haber al menos un reportero asignado para finalizar.", "Aviso",
+                        javax.swing.JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            if (!hayAlMenosUnReporteroBase()) {
+                SwingUtil.showMessage("Debe haber al menos un reportero de tipo BASE asignado al evento.", "Aviso",
+                        javax.swing.JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            if (responsableSeleccionadoId == null || !contieneReporteroAsignado(responsableSeleccionadoId)) {
+                SwingUtil.showMessage(
+                        "Debes elegir un reportero responsable desde la zona de responsable.",
+                        "Aviso", javax.swing.JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            if (!hayCambiosRespectoAlEstadoOriginal()) {
+                SwingUtil.showMessage("No hay cambios pendientes. Modifica la asignación antes de finalizar.", "Aviso",
+                        javax.swing.JOptionPane.WARNING_MESSAGE);
+                return;
+            }
 
             model.eliminarAsignacionesPorEvento(idEvento);
 
             for (ReporteroDisplayDTO rep : reporterosAsignadosVisualmente) {
-                model.guardarAsignacion(idEvento, rep.getIdReportero());
+                boolean esResponsable = rep.getIdReportero().equals(responsableSeleccionadoId);
+                model.guardarAsignacion(idEvento, rep.getIdReportero(), esResponsable, "FINALIZADA");
             }
 
-            javax.swing.JOptionPane.showMessageDialog(null, "¡Asignaciones modificadas y guardadas correctamente!");
+            javax.swing.JOptionPane.showMessageDialog(null,
+                    "¡Asignación finalizada correctamente! Ya no se podrán modificar reporteros de este evento.");
             view.getFrame().dispose();
         } else {
             javax.swing.JOptionPane.showMessageDialog(null, "Selecciona un evento para confirmar.");
         }
+    }
+
+    private boolean hayAlMenosUnReporteroBase() {
+        for (ReporteroDisplayDTO rep : reporterosAsignadosVisualmente) {
+            if (rep.getTipoReportero() != null && "BASE".equalsIgnoreCase(rep.getTipoReportero().trim())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void actualizarEstadoEdicion() {
+        boolean editable = !eventoFinalizadoSeleccionado;
+        view.getBtnAsignar().setEnabled(editable);
+        view.getBtnEliminar().setEnabled(editable);
+        view.getBtnElegirResponsable().setEnabled(editable);
+        view.getBtnFinalizarAsignacion().setEnabled(editable);
+    }
+
+    private void elegirResponsable() {
+        if (eventoFinalizadoSeleccionado) {
+            SwingUtil.showMessage("La asignación está finalizada y no puede modificarse.", "Aviso",
+                    javax.swing.JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        int filaResponsable = view.getTabAsignados().getSelectedRow();
+        if (filaResponsable < 0 || filaResponsable >= reporterosAsignadosVisualmente.size()) {
+            SwingUtil.showMessage("Selecciona un reportero de la tabla de asignados para marcarlo como responsable.",
+                    "Aviso", javax.swing.JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        responsableSeleccionadoId = reporterosAsignadosVisualmente.get(filaResponsable).getIdReportero();
+        actualizarLabelResponsable();
+    }
+
+    private void actualizarLabelResponsable() {
+        String nombre = "(sin seleccionar)";
+        if (responsableSeleccionadoId != null) {
+            for (ReporteroDisplayDTO rep : reporterosAsignadosVisualmente) {
+                if (rep.getIdReportero().equals(responsableSeleccionadoId)) {
+                    nombre = rep.getNombre();
+                    break;
+                }
+            }
+        }
+        view.getLblResponsable().setText("Reportero responsable: " + nombre);
+    }
+
+    private Integer obtenerResponsableDeAsignados(List<ReporteroDisplayDTO> asignados) {
+        for (ReporteroDisplayDTO rep : asignados) {
+            if (rep.getEsResponsable() != null && rep.getEsResponsable() == 1) {
+                return rep.getIdReportero();
+            }
+        }
+        return null;
+    }
+
+    private List<Integer> obtenerIdsOrdenados(List<ReporteroDisplayDTO> lista) {
+        List<Integer> ids = new ArrayList<>();
+        for (ReporteroDisplayDTO rep : lista) {
+            ids.add(rep.getIdReportero());
+        }
+        ids.sort(Integer::compareTo);
+        return ids;
+    }
+
+    private boolean hayCambiosRespectoAlEstadoOriginal() {
+        List<Integer> actuales = obtenerIdsOrdenados(reporterosAsignadosVisualmente);
+        boolean mismosAsignados = actuales.equals(asignadosOriginales);
+        boolean mismoResponsable = (responsableSeleccionadoId == null && responsableOriginalId == null)
+                || (responsableSeleccionadoId != null && responsableSeleccionadoId.equals(responsableOriginalId));
+        return !(mismosAsignados && mismoResponsable);
+    }
+
+    private boolean contieneReporteroAsignado(Integer idReportero) {
+        for (ReporteroDisplayDTO rep : reporterosAsignadosVisualmente) {
+            if (rep.getIdReportero().equals(idReportero)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void actualizarTablaAsignadosVisualmente() {
@@ -164,6 +309,9 @@ public class AsignacionReporterosController {
         view.getTabAsignados().setModel(tmodel);
         view.getTabAsignados().getColumnModel().getColumn(0).setMinWidth(0);
         view.getTabAsignados().getColumnModel().getColumn(0).setMaxWidth(0);
+        view.getTabAsignados().setRowSelectionAllowed(true);
+        view.getTabAsignados().setColumnSelectionAllowed(false);
+        view.getTabAsignados().setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
         view.getTabAsignados().setRowHeight(25);
     }
 

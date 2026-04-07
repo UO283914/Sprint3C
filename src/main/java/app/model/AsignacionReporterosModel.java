@@ -17,7 +17,9 @@ public class AsignacionReporterosModel {
 				+ "JOIN Agencia a ON e.id_agencia = a.id_agencia "
 				+ "LEFT JOIN Evento_Tematica et ON et.id_evento = e.id_evento "
 				+ "LEFT JOIN Tematica t ON t.id_tematica = et.id_tematica "
-				+ "WHERE a.nombre = ? AND NOT EXISTS ("
+				+ "WHERE a.nombre = ? "
+				+ "AND (e.fecha_inicio IS NULL OR e.fecha_fin IS NULL OR e.fecha_inicio = e.fecha_fin) "
+				+ "AND NOT EXISTS ("
 				+ "   SELECT 1 FROM Asignacion asig WHERE asig.id_evento = e.id_evento"
 				+ ") "
 				+ "GROUP BY e.id_evento, e.descripcion, e.fecha";
@@ -34,6 +36,7 @@ public class AsignacionReporterosModel {
 				+ "LEFT JOIN Evento_Tematica et ON et.id_evento = e.id_evento "
 				+ "LEFT JOIN Tematica t ON t.id_tematica = et.id_tematica "
 				+ "WHERE a.nombre = ? "
+				+ "AND (e.fecha_inicio IS NULL OR e.fecha_fin IS NULL OR e.fecha_inicio = e.fecha_fin) "
 				+ "GROUP BY e.id_evento, e.descripcion, e.fecha";
 		return db.executeQueryPojo(EventoDisplayDTO.class, sql, nombreAgencia);
 	}
@@ -85,13 +88,15 @@ public class AsignacionReporterosModel {
 	// 4. Reporteros que YA están asignados a este evento
 	public List<ReporteroDisplayDTO> getReporterosAsignados(Integer idEvento) {
 		String sql = "SELECT r.id_reportero, r.nombre, UPPER(COALESCE(r.tipo_reportero, 'BASE')) AS tipo_reportero, "
+				+ "COALESCE(a.es_responsable, 0) AS es_responsable, "
+				+ "COALESCE(a.estado_asignacion, 'ABIERTA') AS estado_asignacion, "
 				+ "COALESCE(GROUP_CONCAT(DISTINCT t.nombre), 'Sin especialización') AS tematicas "
 				+ "FROM Reportero r "
 				+ "JOIN Asignacion a ON r.id_reportero = a.id_reportero "
 				+ "LEFT JOIN Reportero_Tematica rt ON rt.id_reportero = r.id_reportero "
 				+ "LEFT JOIN Tematica t ON t.id_tematica = rt.id_tematica "
 				+ "WHERE a.id_evento = ? AND COALESCE(r.es_freelance, 0) = 0 "
-				+ "GROUP BY r.id_reportero, r.nombre, r.tipo_reportero";
+				+ "GROUP BY r.id_reportero, r.nombre, r.tipo_reportero, a.es_responsable, a.estado_asignacion";
 		return db.executeQueryPojo(ReporteroDisplayDTO.class, sql, idEvento);
 	}
 
@@ -101,10 +106,21 @@ public class AsignacionReporterosModel {
 	}
 
 	public void guardarAsignacion(Integer idEvento, Integer idReportero) {
+		guardarAsignacion(idEvento, idReportero, false, "ABIERTA");
+	}
+
+	public void guardarAsignacion(Integer idEvento, Integer idReportero, boolean esResponsable, String estadoAsignacion) {
 		if (idEvento == null || idReportero == null) {
 			throw new giis.demo.util.ApplicationException("Error interno: El ID del evento o reportero está llegando vacío.");
 		}
-		String sql = "INSERT INTO Asignacion (id_evento, id_reportero) VALUES (?, ?)";
-		db.executeUpdate(sql, idEvento, idReportero);
+		String sql = "INSERT INTO Asignacion (id_evento, id_reportero, es_responsable, estado_asignacion, fecha_fin_asignacion) "
+				+ "VALUES (?, ?, ?, ?, CASE WHEN ? = 'FINALIZADA' THEN CURRENT_TIMESTAMP ELSE NULL END)";
+		db.executeUpdate(sql, idEvento, idReportero, esResponsable ? 1 : 0, estadoAsignacion, estadoAsignacion);
+	}
+
+	public boolean isAsignacionFinalizada(Integer idEvento) {
+		String sql = "SELECT COUNT(*) FROM Asignacion WHERE id_evento = ? AND estado_asignacion = 'FINALIZADA'";
+		List<Object[]> rows = db.executeQueryArray(sql, idEvento);
+		return rows != null && !rows.isEmpty() && ((Number) rows.get(0)[0]).intValue() > 0;
 	}
 }
